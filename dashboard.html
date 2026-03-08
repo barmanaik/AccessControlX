@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Broken Access Control Project Guide</title>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+margin:40px;
+background:#f4f6f9;
+line-height:1.6;
+}
+
+h1{
+color:#1a237e;
+}
+
+h2{
+color:#283593;
+border-bottom:2px solid #ccc;
+padding-bottom:5px;
+}
+
+.container{
+background:white;
+padding:30px;
+border-radius:8px;
+box-shadow:0px 0px 10px rgba(0,0,0,0.1);
+}
+
+code{
+background:#eee;
+padding:5px;
+border-radius:4px;
+}
+
+pre{
+background:#272822;
+color:white;
+padding:15px;
+border-radius:6px;
+overflow-x:auto;
+}
+
+nav{
+background:#1a237e;
+padding:10px;
+border-radius:5px;
+margin-bottom:20px;
+}
+
+nav a{
+color:white;
+margin-right:15px;
+text-decoration:none;
+font-weight:bold;
+}
+
+nav a:hover{
+text-decoration:underline;
+}
+
+.section{
+margin-top:30px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Broken Access Control Security Project</h1>
+
+<p>
+This project demonstrates how Broken Access Control vulnerabilities can be tested in web applications. 
+The project explains how attackers exploit access control weaknesses such as IDOR, Horizontal Privilege Escalation,
+Vertical Privilege Escalation, and JWT Manipulation.
+</p>
+
+<nav>
+<a href="#setup">Setup</a>
+<a href="#idor">IDOR</a>
+<a href="#horizontal">Horizontal Escalation</a>
+<a href="#vertical">Vertical Escalation</a>
+<a href="#jwt">JWT Manipulation</a>
+<a href="#impact">Impact</a>
+<a href="#prevention">Prevention</a>
+</nav>
+
+<div class="section" id="setup">
+
+<h2>1. Lab Setup</h2>
+
+<p>Tools required:</p>
+
+<ul>
+<li>Burp Suite</li>
+<li>Google Chrome/ Firefox Browser</li>
+<li>Test Web Application</li>
+</ul>
+
+<p>Configure proxy:</p>
+
+<pre>
+Proxy Address: 127.0.0.1
+Port: 8080
+</pre>
+
+<p>
+All traffic from the browser will now pass through Burp Suite, allowing us to intercept and modify requests.
+</p>
+
+</div>
+
+
+<div class="section" id="idor">
+
+<h2>2. IDOR (Insecure Direct Object Reference)</h2>
+
+<p>
+IDOR occurs when an application exposes internal object IDs without proper authorization checks.
+Attackers can modify these IDs to access other users' data.
+</p>
+
+<p>Example API endpoint:</p>
+
+<pre>
+GET /api/orders/1
+</pre>
+
+<p>If an attacker changes the request:</p>
+
+<pre>
+GET /api/orders/2
+GET /api/orders/3
+</pre>
+
+<p>
+If the server returns other users' order details, then the application is vulnerable to IDOR.
+</p>
+
+<h3>Testing Steps</h3>
+
+<ol>
+<li>Login to the application</li>
+<li>Capture request using Burp Suite</li>
+<li>Send request to Repeater</li>
+<li>Modify the order ID</li>
+<li>Check if other users' data is returned</li>
+</ol>
+
+</div>
+
+
+<div class="section" id="horizontal">
+
+<h2>3. Horizontal Privilege Escalation</h2>
+
+<p>
+Horizontal privilege escalation occurs when one user can access another user's data with the same privilege level.
+</p>
+
+<p>Example request:</p>
+
+<pre>
+GET /api/user/101/profile
+</pre>
+
+<p>Attacker changes request to:</p>
+
+<pre>
+GET /api/user/102/profile
+</pre>
+
+<p>If the application returns user 102 data, the vulnerability exists.</p>
+
+</div>
+
+
+<div class="section" id="vertical">
+
+<h2>4. Vertical Privilege Escalation</h2>
+
+<p>
+Vertical privilege escalation occurs when a normal user gains access to admin-level functionality.
+</p>
+
+<p>Example admin endpoint:</p>
+
+<pre>
+GET /api/admin/users
+</pre>
+
+<p>
+If a normal user can access this endpoint and retrieve admin data, it means the application has a vertical privilege escalation vulnerability.
+</p>
+
+<h3>Testing Steps</h3>
+
+<ol>
+<li>Login as a normal user</li>
+<li>Capture a request in Burp Suite</li>
+<li>Modify the endpoint to admin API</li>
+<li>Send the request</li>
+<li>If data is returned, the vulnerability exists</li>
+</ol>
+
+</div>
+
+
+<div class="section" id="jwt">
+
+<h2>5. JWT Token Manipulation</h2>
+
+<p>
+Many applications use JWT tokens for authentication.
+A JWT consists of three parts:
+</p>
+
+<pre>
+HEADER.PAYLOAD.SIGNATURE
+</pre>
+
+<p>Example payload:</p>
+
+<pre>
+{
+"user": "alice",
+"role": "user"
+}
+</pre>
+
+<p>An attacker may modify it to:</p>
+
+<pre>
+{
+"user": "alice",
+"role": "admin"
+}
+</pre>
+
+<p>
+If the server does not properly validate the signature, the attacker may gain admin privileges.
+</p>
+
+<h3>Testing Steps</h3>
+
+<ol>
+<li>Intercept request containing JWT token</li>
+<li>Decode token</li>
+<li>Modify payload</li>
+<li>Resend request</li>
+<li>Check if admin access is granted</li>
+</ol>
+
+</div>
+
+
+<div class="section" id="impact">
+
+<h2>6. Security Impact</h2>
+
+<ul>
+<li>Unauthorized data access</li>
+<li>Data leakage</li>
+<li>Account takeover</li>
+<li>Admin privilege abuse</li>
+<li>Financial loss</li>
+</ul>
+
+</div>
+
+
+<div class="section" id="prevention">
+
+<h2>7. Prevention Methods</h2>
+
+<ul>
+<li>Implement proper server-side authorization checks</li>
+<li>Use indirect object references</li>
+<li>Validate JWT tokens securely</li>
+<li>Use role-based access control</li>
+<li>Log and monitor suspicious activity</li>
+</ul>
+
+</div>
+
+
+<div class="section">
+
+<h2>8. Conclusion</h2>
+
+<p>
+Broken Access Control is one of the most critical vulnerabilities in modern web applications. 
+Through this project, we demonstrated how attackers exploit access control weaknesses using different techniques.
+Proper validation and authorization mechanisms must be implemented to prevent such vulnerabilities.
+</p>
+
+</div>
+
+</div>
+
+</body>
+</html>
